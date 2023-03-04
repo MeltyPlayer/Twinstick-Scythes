@@ -37,7 +37,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
   private Rigidbody rigidbody_;
 
-  private const float MAXIMUM_VELOCITY = 25f;
+  public const float MAXIMUM_SPEED = 25f;
   private const float PUMP_SPEED_MULTIPLIER = 1.5f;
   private float pumpFraction_ = 0;
   private float heldAngleDegrees_ = 0;
@@ -61,7 +61,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
     var currentXzVelocity = this.rigidbody_.velocity.Xz();
     var currentSpeed = currentXzVelocity.magnitude;
-    var currentSpeedFrac = Math.Min(1, currentSpeed / MAXIMUM_VELOCITY);
+    var currentSpeedFrac = Math.Min(1, currentSpeed / MAXIMUM_SPEED);
 
     //Debug.Log($"Current Speed: {currentSpeed} / {MAXIMUM_VELOCITY}");
 

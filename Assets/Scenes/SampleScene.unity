@@ -852,7 +852,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6de5a789e7dce54aab5b8e17d323200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  body: {fileID: 124678142}
+  body: {fileID: 2048560389}
+  scythe: {fileID: 124678142}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
