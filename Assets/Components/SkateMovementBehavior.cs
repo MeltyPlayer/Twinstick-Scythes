@@ -37,7 +37,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
   private Rigidbody rigidbody_;
 
-  private const float MAXIMUM_VELOCITY = 20f;
+  private const float MAXIMUM_VELOCITY = 25f;
   private const float PUMP_SPEED_MULTIPLIER = 1.5f;
   private float pumpFraction_ = 0;
   private float heldAngleDegrees_ = 0;
@@ -85,23 +85,27 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
       // Skating back and forth animation
       {
-        var addAmount = Mathf.Lerp(.2f, 1, currentSpeedFrac) * facingTowardFraction * Time.deltaTime * PUMP_SPEED_MULTIPLIER;
-        if (heldMagnitude > .1f && isFacingForward) {
+        var addAmount = Mathf.Lerp(.05f, 1, currentSpeedFrac) * facingTowardFraction * Time.deltaTime * PUMP_SPEED_MULTIPLIER;
+        float activePumpingFraction;
+        if (isStickHeld && isFacingForward) {
           this.pumpFraction_ += heldMagnitude * addAmount;
-          this.heldAngleDegrees_ = Mathf.Atan2(
-              -this.RelativeHeldVector.y,
-              this.RelativeHeldVector.x) * Mathf.Rad2Deg;
-        } else {
+          activePumpingFraction = 1;
+        } else if (!isStickHeld) {
           float target = this.pumpFraction_ switch {
               < .25f => 0,
               < .75f => .5f,
               _      => 1
           };
           this.pumpFraction_ += MathF.Sign(target - this.pumpFraction_) * addAmount;
+          activePumpingFraction = MathF.Abs(target - this.pumpFraction_) / .25f;
+        } else {
+          this.pumpFraction_ = 0;
+          activePumpingFraction = 0;
         }
         this.pumpFraction_ %= 1;
 
-        var facingAngleRadians = bodyTransform.localEulerAngles.y * Mathf.Deg2Rad;
+        var facingAngleDegrees = bodyTransform.localEulerAngles.y;
+        var facingAngleRadians = facingAngleDegrees * Mathf.Deg2Rad;
         var facingAngleSin = MathF.Sin(facingAngleRadians);
         var facingAngleCos = MathF.Cos(facingAngleRadians);
 
@@ -114,15 +118,32 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
                                      facingAngleCos);
 
         // Updating angle
-        var backAndForthFraction = Mathf.Cos(pumpAngleRadians) * currentSpeedFrac;
+        var backAndForthFraction = activePumpingFraction * Mathf.Cos(pumpAngleRadians) * currentSpeedFrac;
 
-        var yaw =
-            Quaternion.AngleAxis(
-                this.heldAngleDegrees_ - backAndForthFraction * 20,
-                Vector3.up);
-        var roll = Quaternion.AngleAxis(backAndForthFraction * 20, Vector3.right);
-        var pitch = Quaternion.AngleAxis(-20 * currentSpeedFrac, Vector3.forward);
-        bodyTransform.localRotation = yaw * roll * pitch;
+        float yawDegrees, rollDegrees, pitchDegrees;
+        Quaternion yaw, roll, pitch;
+        if (isFacingForward || !isStickHeld) {
+          yawDegrees = this.heldAngleDegrees_ - backAndForthFraction * 20;
+          rollDegrees = backAndForthFraction * 20;
+          pitchDegrees = -40 * currentSpeedFrac;
+        } else {
+          var velocityAngleDegrees =
+              Mathf.Atan2(-normalizedVelocity.y, normalizedVelocity.x) *
+              Mathf.Rad2Deg;
+          var deltaAngle = Mathf.DeltaAngle(velocityAngleDegrees, this.heldAngleDegrees_);
+
+          Debug.Log($"Velocity angle: {velocityAngleDegrees}, Held angle: {this.heldAngleDegrees_}");
+
+          yawDegrees = this.heldAngleDegrees_;
+          rollDegrees = -deltaAngle / 3 * currentSpeedFrac;
+          pitchDegrees = -40 * currentSpeedFrac;
+        }
+        yaw = Quaternion.AngleAxis(yawDegrees, Vector3.up);
+        roll = Quaternion.AngleAxis(rollDegrees, Vector3.right);
+        pitch = Quaternion.AngleAxis(pitchDegrees, Vector3.forward);
+        var newRotation = yaw * roll * pitch;
+
+        bodyTransform.localRotation = Quaternion.Lerp(bodyTransform.localRotation, newRotation, .5f);
       }
 
       // Movement force
