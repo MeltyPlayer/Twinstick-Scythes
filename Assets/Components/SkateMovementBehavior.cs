@@ -37,8 +37,9 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
   private Rigidbody rigidbody_;
 
-  private const float MAXIMUM_VELOCITY = 5f;
+  private const float MAXIMUM_VELOCITY = 15f;
   private float pumpFraction_ = 0;
+  private float facingAngleDegrees_ = 0;
 
   public SkateMovementState MovementState { get; private set; } =
     SkateMovementState.STILL;
@@ -57,21 +58,20 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
   void Update() {
     var bodyTransform = this.body.transform;
 
-    var currentVelocity = this.rigidbody_.velocity;
-    var currentSpeed =
-        new Vector2(currentVelocity.x, currentVelocity.z).magnitude;
+    var currentXzVelocity = this.rigidbody_.velocity.Xz();
+    var currentSpeed = currentXzVelocity.magnitude;
     var currentSpeedFrac = Math.Min(1, currentSpeed / MAXIMUM_VELOCITY);
 
+    //Debug.Log($"Current Speed: {currentSpeed} / {MAXIMUM_VELOCITY}");
+
     // Skating back and forth
-    var addAmount = Time.deltaTime;
+    var addAmount = Mathf.Lerp(.5f, 1, currentSpeedFrac) * Time.deltaTime;
     var heldMagnitude = this.RelativeHeldVector.magnitude;
     if (heldMagnitude > .1f) {
       this.pumpFraction_ += heldMagnitude * addAmount;
-
-      var heldAngle = Mathf.Atan2(
+      this.facingAngleDegrees_ = Mathf.Atan2(
           -this.RelativeHeldVector.y,
-          this.RelativeHeldVector.x);
-      bodyTransform.localRotation = Quaternion.AngleAxis(Mathf.Rad2Deg * heldAngle, Vector3.up);
+          this.RelativeHeldVector.x) * Mathf.Rad2Deg;
     } else {
       float target = this.pumpFraction_ switch {
           < .25f => 0,
@@ -82,16 +82,34 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
     }
     this.pumpFraction_ %= 1;
 
-    var facingAngle = bodyTransform.localEulerAngles.y * Mathf.Deg2Rad;
-    var moveAmount = MathF.Sin(2 * this.pumpFraction_ * MathF.PI) * .5f * currentSpeedFrac;
+    var facingAngleRadians = bodyTransform.localEulerAngles.y * Mathf.Deg2Rad;
+    var facingAngleSin = MathF.Sin(facingAngleRadians);
+    var facingAngleCos = MathF.Cos(facingAngleRadians);
+
+    var pumpAngleRadians = 2 * this.pumpFraction_ * MathF.PI;
+
+    var moveAmount = MathF.Sin(pumpAngleRadians) * .5f * currentSpeedFrac;
     bodyTransform.localPosition =
-        moveAmount * new Vector3(MathF.Sin(facingAngle), 0, MathF.Cos(facingAngle));
+        moveAmount * new Vector3(facingAngleSin,
+                                 0,
+                                 facingAngleCos);
 
     // Movement
     if (this.MovementState.OnGround()) {
+      var normalizedVelocity = currentXzVelocity.normalized;
+      var normalizedHeldAngle = this.RelativeHeldVector.normalized;
+
+      //Debug.Log($"Current: {normalizedVelocity}, Held: {normalizedHeldAngle}");
+
+      var dot = Vector2.Dot(normalizedVelocity, normalizedHeldAngle);
+      var facingTowardFraction = (1 + dot) / 2;
+
+      Debug.Log($"Facing toward amount: {facingTowardFraction}");
+
       var movementNormal =
           new Vector3(this.RelativeHeldVector.x, 0, this.RelativeHeldVector.y);
-      var movementForce = 2 * movementNormal;
+      var movementForce = 2 * movementNormal *
+                          (1 - facingTowardFraction * currentSpeedFrac);
 
       this.rigidbody_.AddRelativeForce(movementForce);
     }
@@ -99,5 +117,16 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
     // Crouching
     this.body.transform.localScale =
         new Vector3(1, .5f + .5f * (1 - this.CrouchAmount), 1);
+
+    // Updating angle
+    var backAndForthFraction = Mathf.Cos(pumpAngleRadians) * currentSpeedFrac;
+
+    var yaw =
+        Quaternion.AngleAxis(
+            this.facingAngleDegrees_ - backAndForthFraction * 20,
+            Vector3.up);
+    var roll = Quaternion.AngleAxis(backAndForthFraction * 20, Vector3.right);
+    var pitch = Quaternion.AngleAxis(-20 * currentSpeedFrac, Vector3.forward);
+    bodyTransform.localRotation = yaw * roll * pitch;
   }
 }
