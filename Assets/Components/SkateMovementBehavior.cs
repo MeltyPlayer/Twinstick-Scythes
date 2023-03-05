@@ -32,15 +32,18 @@ public interface ISkateMovement {
 }
 
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(TrailRenderer))]
 public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
   public GameObject body;
 
   private Rigidbody rigidbody_;
+  private TrailRenderer trailRenderer_;
 
-  public const float MAXIMUM_SPEED = 25f;
-  private const float PUMP_SPEED_MULTIPLIER = 1.5f;
+  public const float MAXIMUM_SPEED = 35f; // 25
+  private const float PUMP_SPEED_MULTIPLIER = 2f; // 1.5
   private float pumpFraction_ = 0;
   private float heldAngleDegrees_ = 0;
+  private readonly StateDebouncer<bool> emittingDebouncer_ = new(false, .5f);
 
   public SkateMovementState MovementState { get; private set; } =
     SkateMovementState.STILL;
@@ -53,6 +56,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
   // Start is called before the first frame update
   void Start() {
     this.rigidbody_ = GetComponent<Rigidbody>();
+    this.trailRenderer_ = GetComponent<TrailRenderer>();
   }
 
   // Update is called once per frame
@@ -74,6 +78,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
     }
 
     // Movement
+    var enableEmitter = false;
     if (this.MovementState.OnGround()) {
       var normalizedVelocity = currentXzVelocity.normalized;
       var normalizedHeldAngle = this.RelativeHeldVector.normalized;
@@ -111,11 +116,13 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
         var pumpAngleRadians = 2 * this.pumpFraction_ * MathF.PI;
 
-        var moveAmount = MathF.Sin(pumpAngleRadians) * .5f * currentSpeedFrac;
+        var sideToSideMoveAmount = MathF.Sin(pumpAngleRadians) * .5f * currentSpeedFrac;
+        var forwardAndBackMoveAmount = MathF.Cos(2 * pumpAngleRadians) * .25f * currentSpeedFrac;
         bodyTransform.localPosition =
-            moveAmount * new Vector3(facingAngleSin,
-                                     0,
-                                     facingAngleCos);
+            sideToSideMoveAmount *
+            new Vector3(facingAngleSin, 0, facingAngleCos) +
+            forwardAndBackMoveAmount *
+            new Vector3(facingAngleCos, 0, facingAngleSin);
 
         // Updating angle
         var backAndForthFraction = activePumpingFraction * Mathf.Cos(pumpAngleRadians) * currentSpeedFrac;
@@ -125,7 +132,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
         if (isFacingForward || !isStickHeld) {
           yawDegrees = this.heldAngleDegrees_ - backAndForthFraction * 20;
           rollDegrees = backAndForthFraction * 20;
-          pitchDegrees = -40 * currentSpeedFrac;
+          pitchDegrees = -40 * currentSpeedFrac + forwardAndBackMoveAmount * 15;
         } else {
           var velocityAngleDegrees =
               Mathf.Atan2(-normalizedVelocity.y, normalizedVelocity.x) *
@@ -135,8 +142,8 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
           Debug.Log($"Velocity angle: {velocityAngleDegrees}, Held angle: {this.heldAngleDegrees_}");
 
           yawDegrees = this.heldAngleDegrees_;
-          rollDegrees = -deltaAngle / 3 * currentSpeedFrac;
-          pitchDegrees = -40 * currentSpeedFrac;
+          rollDegrees = -deltaAngle / 2 * currentSpeedFrac;
+          pitchDegrees = -60 * currentSpeedFrac;
         }
         yaw = Quaternion.AngleAxis(yawDegrees, Vector3.up);
         roll = Quaternion.AngleAxis(rollDegrees, Vector3.right);
@@ -150,12 +157,25 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
       {
         var movementNormal =
             new Vector3(this.RelativeHeldVector.x, 0, this.RelativeHeldVector.y);
-        var movementForce = 3 * movementNormal *
-                            (1 - MathF.Pow(facingTowardFraction * currentSpeedFrac, .5f));
+        // 3
+        var movementForce = 5 * movementNormal *
+                            (1 - MathF.Pow(
+                                facingTowardFraction * currentSpeedFrac,
+                                .25f)); // .5
 
         this.rigidbody_.AddRelativeForce(movementForce);
       }
+
+      if (currentSpeedFrac > .25f && !isFacingForward) {
+        enableEmitter = true;
+      }
     }
+
+    var currentEmittingValue = this.emittingDebouncer_.Value;
+    if (enableEmitter != currentEmittingValue) {
+      this.emittingDebouncer_.Value = currentEmittingValue = enableEmitter;
+    }
+    this.trailRenderer_.emitting = currentEmittingValue;
 
     // Crouching
     this.body.transform.localScale =
