@@ -12,16 +12,26 @@ public class StateDebouncer<T> {
   }
 
   public T Value {
-    get => this.value_;
-    set {
-      var currentTime = this.GetCurrentTime_();
-      if ((currentTime - this.lastUpdateTime_).TotalSeconds >=
-          this.secondsBetweenUpdate_ || value.Equals(this.value_)) {
-        this.value_ = value;
-        this.lastUpdateTime_ = currentTime;
-      }
+    get => GetDebounced();
+    set => SetDebounced(value);
+  }
+
+  public T GetDebounced() => this.value_;
+
+  public void SetDebounced(T value) {
+    if (TimeSinceLastUpdate.TotalSeconds >= this.secondsBetweenUpdate_ ||
+        value.Equals(this.value_)) {
+      SetForced(value);
     }
   }
+
+  public void SetForced(T value) {
+    this.value_ = value;
+    this.lastUpdateTime_ = this.GetCurrentTime_();
+  }
+
+  public TimeSpan TimeSinceLastUpdate
+    => this.GetCurrentTime_() - this.lastUpdateTime_;
 
   private DateTime GetCurrentTime_() => DateTime.UtcNow;
 }

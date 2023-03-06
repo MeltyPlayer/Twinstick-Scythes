@@ -981,6 +981,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 057ecfcf4a5295a45a262f5de699af80, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  body: {fileID: 2048560389}
   scythe: {fileID: 124678142}
 --- !u!1 &963194225
 GameObject:
