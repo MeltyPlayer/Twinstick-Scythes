@@ -9,6 +9,7 @@ public class SwipeBasedScytheMovementBehavior : MonoBehaviour, IScytheMovement {
   public GameObject scythe;
 
   private IReadOnlyList<MeshRenderer> meshRenderers_;
+  private TrailRenderer trailRenderer_;
   private float previousHeldAngleDegrees_;
   private float scytheVelocity_;
   private Color scytheColor_ = Color.white;
@@ -24,6 +25,7 @@ public class SwipeBasedScytheMovementBehavior : MonoBehaviour, IScytheMovement {
 
   void Start() {
     this.meshRenderers_ = this.scythe.GetComponentsInChildren<MeshRenderer>();
+    this.trailRenderer_ = this.scythe.GetComponentInChildren<TrailRenderer>();
   }
 
   // Update is called once per frame
@@ -65,7 +67,13 @@ public class SwipeBasedScytheMovementBehavior : MonoBehaviour, IScytheMovement {
     var isSwinging = this.activelySwinging_.Value;
 
     if (isStickHeld && isSwinging) {
-      this.scytheVelocity_ = MaxMagnitude_(this.scytheVelocity_, rawDeltaAngleDegrees);
+      Debug.Log(Time.fixedDeltaTime);
+      var maxRawDeltaAngleDegrees = MathF.Sign(rawDeltaAngleDegrees) * 30f /
+                                    (Time.fixedDeltaTime / .02f);
+      this.scytheVelocity_ =
+          MaxMagnitude_(this.scytheVelocity_,
+                        MinMagnitude_(rawDeltaAngleDegrees,
+                                      maxRawDeltaAngleDegrees));
     }
 
     float scytheAngleDegrees;
@@ -74,7 +82,7 @@ public class SwipeBasedScytheMovementBehavior : MonoBehaviour, IScytheMovement {
     } else {
       scytheAngleDegrees = currentDegrees + this.scytheVelocity_;
     }
-    this.scytheVelocity_ *= .7f;
+    this.scytheVelocity_ *= .8f;
     scytheTransform.localRotation =
         Quaternion.AngleAxis(scytheAngleDegrees, Vector3.up);
 
@@ -108,11 +116,13 @@ public class SwipeBasedScytheMovementBehavior : MonoBehaviour, IScytheMovement {
       this.pastRawHeldAngleDeltas_.RemoveLast();
       this.pastHeldAngleDeltas_.RemoveLast();
     }
-  }
 
-  private float MaxMagnitude_(params float[] values)
-    => values.Aggregate(this.MaxMagnitude_);
+    this.trailRenderer_.emitting = isSwinging;
+  }
 
   private float MaxMagnitude_(float a, float b)
     => Math.Abs(a) > Math.Abs(b) ? a : b;
+
+  private float MinMagnitude_(float a, float b)
+    => Math.Abs(a) < Math.Abs(b) ? a : b;
 }
