@@ -132,7 +132,9 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
         if (isFacingForward || !isStickHeld) {
           yawDegrees = this.heldAngleDegrees_ - backAndForthFraction * 20;
           rollDegrees = backAndForthFraction * 20;
-          pitchDegrees = -40 * currentSpeedFrac + forwardAndBackMoveAmount * 15;
+          pitchDegrees =
+              -Mathf.Lerp(40, 60, this.CrouchAmount) * currentSpeedFrac +
+              forwardAndBackMoveAmount * 15;
         } else {
           var velocityAngleDegrees =
               Mathf.Atan2(-normalizedVelocity.y, normalizedVelocity.x) *
@@ -143,7 +145,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
           yawDegrees = this.heldAngleDegrees_;
           rollDegrees = -deltaAngle / 2 * currentSpeedFrac;
-          pitchDegrees = -60 * currentSpeedFrac;
+          pitchDegrees = -Mathf.Lerp(60, 75, this.CrouchAmount) * currentSpeedFrac;
         }
         yaw = Quaternion.AngleAxis(yawDegrees, Vector3.up);
         roll = Quaternion.AngleAxis(rollDegrees, Vector3.right);
@@ -157,11 +159,13 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
       {
         var movementNormal =
             new Vector3(this.RelativeHeldVector.x, 0, this.RelativeHeldVector.y);
-        // 3
-        var movementForce = 5 * movementNormal *
+
+        var maxMovementForce = Mathf.Lerp(3, 5, this.CrouchAmount) *
+            Physics.gravity.magnitude / 9.81f;
+        var movementForce = maxMovementForce * movementNormal *
                             (1 - MathF.Pow(
                                 facingTowardFraction * currentSpeedFrac,
-                                .25f)); // .5
+                                .25f));
 
         this.rigidbody_.AddRelativeForce(movementForce);
       }
@@ -176,9 +180,5 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
       this.emittingDebouncer_.Value = currentEmittingValue = enableEmitter;
     }
     this.trailRenderer_.emitting = currentEmittingValue;
-
-    // Crouching
-    this.body.transform.localScale =
-        new Vector3(1, .5f + .5f * (1 - this.CrouchAmount), 1);
   }
 }

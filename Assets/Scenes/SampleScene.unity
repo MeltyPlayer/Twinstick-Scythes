@@ -642,6 +642,7 @@ GameObject:
   - component: {fileID: 756816002}
   - component: {fileID: 756816003}
   - component: {fileID: 756816004}
+  - component: {fileID: 756816006}
   - component: {fileID: 756816005}
   m_Layer: 0
   m_Name: Player
@@ -848,7 +849,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 756815994}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c6de5a789e7dce54aab5b8e17d323200, type: 3}
   m_Name: 
@@ -968,6 +969,19 @@ TrailRenderer:
   m_Autodestruct: 0
   m_Emitting: 0
   m_ApplyActiveColorSpace: 1
+--- !u!114 &756816006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 756815994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 057ecfcf4a5295a45a262f5de699af80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scythe: {fileID: 124678142}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
