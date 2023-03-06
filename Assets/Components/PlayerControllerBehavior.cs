@@ -1,18 +1,22 @@
+using System.Linq;
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(PlayerInput))]
-[RequireComponent(typeof(ScytheMovementBehavior))]
+[RequireComponent(typeof(IScytheMovement))]
 [RequireComponent(typeof(SkateMovementBehavior))]
 public class PlayerControllerBehavior : MonoBehaviour {
   private PlayerInput playerInput_;
-  private ScytheMovementBehavior scytheMovementBehavior_;
+  private IScytheMovement scytheMovementBehavior_;
   private SkateMovementBehavior skateMovementBehavior_;
 
   // Start is called before the first frame update
   void Start() {
     this.playerInput_ = GetComponent<PlayerInput>();
-    this.scytheMovementBehavior_ = GetComponent<ScytheMovementBehavior>();
+    this.scytheMovementBehavior_ =
+        GetComponents<IScytheMovement>()
+            .First(component => component.IsEnabled);
     this.skateMovementBehavior_ = GetComponent<SkateMovementBehavior>();
   }
 

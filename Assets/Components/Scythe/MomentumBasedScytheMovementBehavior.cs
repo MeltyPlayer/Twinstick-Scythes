@@ -1,16 +1,14 @@
 using UnityEngine;
 
-public interface IScytheMovement {
-  Vector2 RelativeHeldVector { get; set; }
-}
-
-public class ScytheMovementBehavior : MonoBehaviour, IScytheMovement {
+public class MomentumBasedScytheMovementBehavior : MonoBehaviour, IScytheMovement {
   public GameObject body;
   public GameObject scythe;
 
   private Rigidbody rigidbody_;
 
+  public bool IsEnabled => base.enabled;
   public Vector2 RelativeHeldVector { get; set; }
+  public float AngularVelocity { get; set; }
 
   void Start() {
     this.rigidbody_ = GetComponent<Rigidbody>();
@@ -30,7 +28,8 @@ public class ScytheMovementBehavior : MonoBehaviour, IScytheMovement {
         currentVelocity.magnitude / SkateMovementBehavior.MAXIMUM_SPEED;
     if (currentSpeedFraction > .01f) {
       var dragAngleDegrees =
-          Mathf.Atan2(-currentVelocity.y, currentVelocity.x) * Mathf.Rad2Deg + 180;
+          Mathf.Atan2(-currentVelocity.y, currentVelocity.x) * Mathf.Rad2Deg +
+          180;
       dragAngleDegreesDelta =
           Mathf.DeltaAngle(dragAngleDegrees, currentDegrees);
     }
@@ -47,16 +46,25 @@ public class ScytheMovementBehavior : MonoBehaviour, IScytheMovement {
     }
 
     // Apply forces to rotation
-    var currentSpeedFractionFactor = Mathf.Pow(currentSpeedFraction, 2);
-    var heldForceAmount = (1 - currentSpeedFractionFactor) * .8f;
-    var dragForceAmount = currentSpeedFractionFactor * .8f;
-    currentDegrees += -heldAngleDegreesDelta * heldForceAmount - dragAngleDegreesDelta * dragForceAmount;
-    scytheTransform.localRotation = Quaternion.AngleAxis(currentDegrees, Vector3.up);
+    var maxDragForce = .8f;
+    var maxHeldForce = .5f;
+
+    var currentSpeedFractionFactor = Mathf.Pow(currentSpeedFraction, .75f);
+    var heldForceAmount = (1 - currentSpeedFractionFactor) * maxHeldForce;
+    var dragForceAmount = currentSpeedFractionFactor * maxDragForce;
+
+    this.AngularVelocity *= .99f;
+    this.AngularVelocity += (-heldAngleDegreesDelta * heldForceAmount -
+                            dragAngleDegreesDelta * dragForceAmount) * Time.deltaTime;
+    scytheTransform.localRotation =
+        Quaternion.AngleAxis(currentDegrees + this.AngularVelocity, Vector3.up);
 
     // Update facing angle based on side of body
     var bodyTransform = this.body.transform;
     var deltaAngle =
-        Mathf.DeltaAngle(scytheTransform.eulerAngles.y, bodyTransform.eulerAngles.y);
-    scytheTransform.localScale = new Vector3(1, 1, Mathf.Sign(deltaAngle) > 0 ? 1 : -1);
+        Mathf.DeltaAngle(scytheTransform.eulerAngles.y,
+                         bodyTransform.eulerAngles.y);
+    scytheTransform.localScale =
+        new Vector3(1, 1, Mathf.Sign(deltaAngle) > 0 ? 1 : -1);
   }
 }
