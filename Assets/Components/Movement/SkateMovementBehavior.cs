@@ -60,7 +60,7 @@ public class SkateMovementBehavior : MonoBehaviour, IMovementBehavior {
     //Debug.Log($"Current Speed: {currentSpeed} / {MAXIMUM_VELOCITY}");
 
     var heldMagnitude = this.RelativeHeldVector.magnitude;
-    var isStickHeld = heldMagnitude > .3f;
+    var isStickHeld = heldMagnitude > Constants.DEAD_ZONE;
     if (isStickHeld) {
       this.heldAngleDegrees_ = Mathf.Atan2(
           -this.RelativeHeldVector.y,
