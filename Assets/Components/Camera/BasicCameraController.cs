@@ -23,6 +23,8 @@ public class BasicCameraController : MonoBehaviour {
       var deltaAngle = Mathf.DeltaAngle(cameraAngleDegrees, velocityDegrees);
     }
 
+    cameraAngleDegrees += .1f;
+
     var cameraAngleRadians = cameraAngleDegrees * Mathf.Deg2Rad;
     var cameraAngleVector = new Vector3(MathF.Sin(cameraAngleRadians),
                                         0,
