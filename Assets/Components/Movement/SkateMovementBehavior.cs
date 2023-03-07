@@ -22,18 +22,9 @@ public static class SkateMovementStateExtensions {
     => state is SkateMovementState.IN_AIR;
 }
 
-public interface ISkateMovement {
-  SkateMovementState MovementState { get; }
-
-  Vector2 RelativeHeldVector { get; set; }
-  float CrouchAmount { get; set; }
-
-  void Pump();
-}
-
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(TrailRenderer))]
-public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
+public class SkateMovementBehavior : MonoBehaviour, IMovementBehavior {
   public GameObject body;
 
   private Rigidbody rigidbody_;
@@ -48,10 +39,9 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
   public SkateMovementState MovementState { get; private set; } =
     SkateMovementState.STILL;
 
+  public bool IsEnabled => base.enabled;
   public Vector2 RelativeHeldVector { get; set; }
-  public float CrouchAmount { get; set; }
-
-  public void Pump() { }
+  public float DashAmount { get; set; }
 
   // Start is called before the first frame update
   void Start() {
@@ -133,7 +123,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
           yawDegrees = this.heldAngleDegrees_ - backAndForthFraction * 20;
           rollDegrees = backAndForthFraction * 20;
           pitchDegrees =
-              -Mathf.Lerp(40, 60, this.CrouchAmount) * currentSpeedFrac +
+              -Mathf.Lerp(40, 60, this.DashAmount) * currentSpeedFrac +
               forwardAndBackMoveAmount * 15;
         } else {
           var velocityAngleDegrees =
@@ -145,7 +135,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
           yawDegrees = this.heldAngleDegrees_;
           rollDegrees = -deltaAngle / 2 * currentSpeedFrac;
-          pitchDegrees = -Mathf.Lerp(60, 75, this.CrouchAmount) * currentSpeedFrac;
+          pitchDegrees = -Mathf.Lerp(60, 75, this.DashAmount) * currentSpeedFrac;
         }
         yaw = Quaternion.AngleAxis(yawDegrees, Vector3.up);
         roll = Quaternion.AngleAxis(rollDegrees, Vector3.right);
@@ -160,7 +150,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
         var movementNormal =
             new Vector3(this.RelativeHeldVector.x, 0, this.RelativeHeldVector.y);
 
-        var maxMovementForce = Mathf.Lerp(3, 5, this.CrouchAmount) *
+        var maxMovementForce = Mathf.Lerp(3, 5, this.DashAmount) *
             Physics.gravity.magnitude / 9.81f;
         var movementForce = maxMovementForce * movementNormal *
                             (1 - MathF.Pow(
@@ -169,7 +159,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
         this.rigidbody_.AddRelativeForce(
             movementForce * Time.fixedDeltaTime *
-            Mathf.Lerp(10, 15, this.CrouchAmount),
+            Mathf.Lerp(10, 15, this.DashAmount),
             ForceMode.VelocityChange);
       }
 

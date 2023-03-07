@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class MomentumBasedScytheMovementBehavior : MonoBehaviour, IScytheMovement {
+public class MomentumBasedScytheBehavior : MonoBehaviour, IScytheBehavior {
   public GameObject body;
   public GameObject scythe;
 

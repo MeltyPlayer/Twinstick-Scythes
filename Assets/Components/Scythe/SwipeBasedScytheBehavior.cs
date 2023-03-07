@@ -4,7 +4,7 @@ using System.Linq;
 
 using UnityEngine;
 
-public class SwipeBasedScytheMovementBehavior : MonoBehaviour, IScytheMovement {
+public class SwipeBasedScytheBehavior : MonoBehaviour, IScytheBehavior {
   public GameObject body;
   public GameObject scythe;
 

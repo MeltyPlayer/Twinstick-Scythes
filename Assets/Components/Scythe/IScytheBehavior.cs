@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 
-public interface IScytheMovement {
-  bool IsEnabled { get; }
+public interface IScytheBehavior : IEnableableBehavior {
   Vector2 RelativeHeldVector { get; set; }
 }

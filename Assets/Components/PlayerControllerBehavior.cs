@@ -1,23 +1,19 @@
-using System.Linq;
-
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(PlayerInput))]
-[RequireComponent(typeof(IScytheMovement))]
-[RequireComponent(typeof(SkateMovementBehavior))]
+[RequireComponent(typeof(IScytheBehavior))]
+[RequireComponent(typeof(IMovementBehavior))]
 public class PlayerControllerBehavior : MonoBehaviour {
   private PlayerInput playerInput_;
-  private IScytheMovement scytheMovementBehavior_;
-  private SkateMovementBehavior skateMovementBehavior_;
+  private IScytheBehavior scytheBehavior_;
+  private IMovementBehavior movementBehavior_;
 
   // Start is called before the first frame update
   void Start() {
     this.playerInput_ = GetComponent<PlayerInput>();
-    this.scytheMovementBehavior_ =
-        GetComponents<IScytheMovement>()
-            .First(component => component.IsEnabled);
-    this.skateMovementBehavior_ = GetComponent<SkateMovementBehavior>();
+    this.scytheBehavior_ = this.GetFirstEnabledComponent<IScytheBehavior>();
+    this.movementBehavior_ = this.GetFirstEnabledComponent<IMovementBehavior>();
   }
 
   // Update is called once per frame
@@ -26,16 +22,16 @@ public class PlayerControllerBehavior : MonoBehaviour {
 
   void OnMove(InputValue movementValue) {
     var leftStick = movementValue.Get<Vector2>();
-    this.skateMovementBehavior_.RelativeHeldVector = leftStick;
+    this.movementBehavior_.RelativeHeldVector = leftStick;
   }
 
   void OnLook(InputValue movementValue) {
     var rightStick = movementValue.Get<Vector2>();
-    this.scytheMovementBehavior_.RelativeHeldVector = rightStick;
+    this.scytheBehavior_.RelativeHeldVector = rightStick;
   }
 
   void OnCrouch(InputValue movementValue) {
-    var crouchAmount = movementValue.Get<float>();
-    this.skateMovementBehavior_.CrouchAmount = crouchAmount;
+    var dashAmount = movementValue.Get<float>();
+    this.movementBehavior_.DashAmount = dashAmount;
   }
 }
