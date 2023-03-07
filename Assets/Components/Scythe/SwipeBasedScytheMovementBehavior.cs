@@ -67,7 +67,6 @@ public class SwipeBasedScytheMovementBehavior : MonoBehaviour, IScytheMovement {
     var isSwinging = this.activelySwinging_.Value;
 
     if (isStickHeld && isSwinging) {
-      Debug.Log(Time.fixedDeltaTime);
       var maxRawDeltaAngleDegrees = MathF.Sign(rawDeltaAngleDegrees) * 30f /
                                     (Time.fixedDeltaTime / .02f);
       this.scytheVelocity_ =

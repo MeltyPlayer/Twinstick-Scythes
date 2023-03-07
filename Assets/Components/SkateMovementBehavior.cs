@@ -60,7 +60,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
   }
 
   // Update is called once per frame
-  void Update() {
+  void FixedUpdate() {
     var bodyTransform = this.body.transform;
 
     var currentXzVelocity = this.rigidbody_.velocity.Xz();
@@ -70,7 +70,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
     //Debug.Log($"Current Speed: {currentSpeed} / {MAXIMUM_VELOCITY}");
 
     var heldMagnitude = this.RelativeHeldVector.magnitude;
-    var isStickHeld = heldMagnitude > .1f;
+    var isStickHeld = heldMagnitude > .3f;
     if (isStickHeld) {
       this.heldAngleDegrees_ = Mathf.Atan2(
           -this.RelativeHeldVector.y,
@@ -90,7 +90,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
 
       // Skating back and forth animation
       {
-        var addAmount = Mathf.Lerp(.05f, 1, currentSpeedFrac) * facingTowardFraction * Time.deltaTime * PUMP_SPEED_MULTIPLIER;
+        var addAmount = Mathf.Lerp(.05f, 1, currentSpeedFrac) * facingTowardFraction * Time.fixedDeltaTime * PUMP_SPEED_MULTIPLIER;
         float activePumpingFraction;
         if (isStickHeld && isFacingForward) {
           this.pumpFraction_ += heldMagnitude * addAmount;
@@ -167,10 +167,13 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
                                 facingTowardFraction * currentSpeedFrac,
                                 .25f));
 
-        this.rigidbody_.AddRelativeForce(movementForce);
+        this.rigidbody_.AddRelativeForce(
+            movementForce * Time.fixedDeltaTime *
+            Mathf.Lerp(10, 15, this.CrouchAmount),
+            ForceMode.VelocityChange);
       }
 
-      if (currentSpeedFrac > .25f && !isFacingForward) {
+      if (currentSpeedFrac > .25f && isStickHeld && !isFacingForward) {
         enableEmitter = true;
       }
     }
@@ -180,5 +183,7 @@ public class SkateMovementBehavior : MonoBehaviour, ISkateMovement {
       this.emittingDebouncer_.Value = currentEmittingValue = enableEmitter;
     }
     this.trailRenderer_.emitting = currentEmittingValue;
+
+    this.rigidbody_.velocity -= this.rigidbody_.velocity * .5f * Time.fixedDeltaTime;
   }
 }
